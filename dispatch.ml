@@ -7,7 +7,7 @@ let pb = Printf.bprintf
 let manifest () =
   let open Opam_manifest in
   let buf = Buffer.create 1024 in
-  pb buf "<h3>Manifest</h3><ul>\n";
+  pb buf "<h3>Manifest (%d packages)</h3><ul>\n" (List.length Opam_manifest.all);
   List.iter (fun pkg ->
       match pkg.archive with
       | "" -> pb buf "<li>%s.%s</li>\n" pkg.name pkg.version
