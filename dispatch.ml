@@ -4,17 +4,43 @@ open V1_LWT
 
 let pb = Printf.bprintf
 
+let time ~boot ~ago =
+  Printf.sprintf
+    "<div class=\"time\">\n\
+     Unikernel booted in %f seconds, %f seconds ago\n\
+     </div>" boot ago
+
 let manifest () =
   let open Opam_manifest in
   let buf = Buffer.create 1024 in
-  pb buf "<h3>Manifest (%d packages)</h3><ul>\n" (List.length Opam_manifest.all);
+  pb buf "<div class=\"manifest\">\n\
+          <h3>Manifest (%d packages)</h3>\n\
+          <ul>\n" (List.length Opam_manifest.all);
   List.iter (fun pkg ->
       match pkg.archive with
       | "" -> pb buf "<li>%s.%s</li>\n" pkg.name pkg.version
       | a  -> pb buf "<li><a href=%S>%s.%s</a></li>\n" a pkg.name pkg.version
     ) Opam_manifest.all;
-  pb buf "</ul>\n";
+  pb buf "</ul>\n\
+          </div>";
   Buffer.contents buf
+
+let gc () =
+  let open Gc in
+  let k f = Printf.sprintf "%dk" (f / 1_000) in
+  let m f = Printf.sprintf "%.0fm" (f /. 1_000_000.) in
+  let t = Gc.stat () in
+  Printf.sprintf
+    "<div class=\"gc\">\n\
+     <ul>\n\
+     <li>%s</li>\n\
+     <li>%s</li>\n\
+     <li>%s</li>\n\
+     </ul>\n\
+     </div>"
+    (m (Gc.allocated_bytes ()))
+    (k t.heap_words)
+    (k t.live_words)
 
 let body ~boot ~ago =
   Printf.sprintf
@@ -22,11 +48,14 @@ let body ~boot ~ago =
      <body>\n\
      <h1>Hello World from Jitsu!</h1>\
      <hr />\
-     Unikernel booted in %f seconds, %f seconds ago\n\
-     %s
+     <div class=\"internals\">\n\
+     %s\n\
+     %s\n\
+     %s\n\
+     </div>\n\
      </body>\n\
      </html>"
-    boot ago (manifest ())
+    (time ~boot ~ago) (gc ()) (manifest ())
 
 (* Split a URI into a list of path segments *)
 let split_path uri =
