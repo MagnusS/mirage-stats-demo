@@ -1,2 +1,5 @@
 PKG unix stringext mirage uri re.str cohttp mirage-xen
-S manifest/ .
+S manifest/
+S .
+B _build/*
+B _build/**
