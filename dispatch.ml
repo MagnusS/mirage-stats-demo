@@ -2,16 +2,29 @@ open Lwt
 open Printf
 open V1_LWT
 
-let stats ~boot ~ago =
+let pb = Printf.bprintf
+
+let manifest () =
+  let open Opam_manifest in
+  let buf = Buffer.create 1024 in
+  pb buf "<ul>\n";
+  List.iter (fun pkg ->
+        pb buf "<li><a href=%S>%s.%s</a></li>\n"
+          pkg.archive pkg.name pkg.version
+    ) Opam_manifest.all;
+  Buffer.contents buf
+
+let body ~boot ~ago =
   Printf.sprintf
     "<html>\n\
      <body>\n\
      <h1>Hello World from Jitsu!</h1>\
-     <br />\
+     <hr />\
      Unikernel booted in %f seconds, %f seconds ago\n\
+     %s
      </body>\n\
      </html>"
-    boot ago
+    boot ago (manifest ())
 
 (* Split a URI into a list of path segments *)
 let split_path uri =
@@ -52,7 +65,7 @@ module Main (C:CONSOLE) (S:Cohttp_lwt.Server) (Clock : V1.CLOCK)= struct
       start_time () >>= fun st ->
       let boot = !finish_boot_ts -. st in
       let ago  = on_time -. st in
-      let body = stats ~boot ~ago in
+      let body = body ~boot ~ago in
       S.respond_string ~status:`OK ~body ()
 
   let start c http clock =
