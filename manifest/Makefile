@@ -1,2 +1,2 @@
 all: manifest.ml
-	ocamlbuild manifest.byte -pkgs unix,stringext,mirage
+	ocamlbuild manifest.native -pkgs unix,stringext,mirage
