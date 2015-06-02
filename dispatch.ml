@@ -7,11 +7,13 @@ let pb = Printf.bprintf
 let manifest () =
   let open Opam_manifest in
   let buf = Buffer.create 1024 in
-  pb buf "<ul>\n";
+  pb buf "<h3>Manifest</h3><ul>\n";
   List.iter (fun pkg ->
-        pb buf "<li><a href=%S>%s.%s</a></li>\n"
-          pkg.archive pkg.name pkg.version
+      match pkg.archive with
+      | "" -> pb buf "<li>%s.%s</li>\n" pkg.name pkg.version
+      | a  -> pb buf "<li><a href=%S>%s.%s</a></li>\n" a pkg.name pkg.version
     ) Opam_manifest.all;
+  pb buf "</ul>\n";
   Buffer.contents buf
 
 let body ~boot ~ago =
