@@ -1,0 +1,7 @@
+MANIFEST=./manifest/manifest.native
+
+opam_manifest.ml: .git/HEAD
+	${MANIFEST}
+
+${MANIFEST}: ./manifest/manifest.ml
+	make -C manifest
