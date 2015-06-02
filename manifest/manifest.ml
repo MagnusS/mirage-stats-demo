@@ -124,10 +124,17 @@ end
 
 module Opam = struct
 
+  let last = function
+    | [] -> ""
+    | l  -> List.hd (List.rev l)
+
   let info pkg fmt =
     Printf.ksprintf (fun str ->
         Shell.read_command "opam info %s %s" pkg str
-        |> String.strip
+        |> String.split ~on:'\n'
+        |> List.map String.strip
+        |> List.filter ((<>)"")
+        |> last (* Can be needed with pinned packages ...*)
       ) fmt
 
   let list pkg =
@@ -156,13 +163,18 @@ module Package = struct
   let hash pkg = Opam.info pkg "-f upstream-checksum"
   let archive pkg = Opam.info pkg "-f upstream-url"
 
-  let create pkg =
-    { name = name pkg; version = version pkg;
-      hash = hash pkg; archive = archive pkg; }
-
   let pp fmt t =
     Format.fprintf fmt "{ name=%S; version=%S; hash=%S; archive=%S }"
       t.name t.version t.hash t.archive
+
+  let create pkg =
+    let name = name pkg in
+    let version = version pkg in
+    let hash = hash pkg in
+    let archive = archive pkg in
+    let t = { name; version; hash; archive } in
+    Format.printf "Package.create %s: %a\n" pkg pp t;
+    t
 
   let current () =
     { name = "current"; (* FIXME: expose the unikernel name in the Mirage API *)
