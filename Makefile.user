@@ -1,0 +1,13 @@
+MANIFEST=./manifest/manifest.native
+SYNTAX += -tag-line "<opam_manifest.*>: -syntax(camlp4o)"
+
+depend:: opam_manifest.ml
+
+clean::
+	rm -f opam_manifest.ml
+
+opam_manifest.ml: ${MANIFEST} .git/HEAD
+	${MANIFEST}
+
+${MANIFEST}: ./manifest/manifest.ml
+	make -C manifest
