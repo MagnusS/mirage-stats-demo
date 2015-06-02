@@ -15,8 +15,7 @@ let server =
   conduit_direct (stack default_console)
 
 let http_srv =
-  let mode = `TCP (`Port 80) in
-  http_server mode server
+  http_server server
 
 let () =
   add_to_ocamlfind_libraries ["re.str";"str"];
