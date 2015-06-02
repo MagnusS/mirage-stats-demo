@@ -18,6 +18,44 @@
 
 let (/) = Filename.concat
 
+module String = struct
+
+  include String
+
+  let strip str =
+    let p = ref 0 in
+    let l = String.length str in
+    let fn = function
+      | ' ' | '\t' | '\r' | '\n' -> true
+      | _ -> false in
+    while !p < l && fn (String.unsafe_get str !p) do
+      incr p;
+    done;
+    let p = !p in
+    let l = ref (l - 1) in
+    while !l >= p && fn (String.unsafe_get str !l) do
+      decr l;
+    done;
+    String.sub str p (!l - p + 1)
+
+  let cut_at s ~on:sep =
+    try
+      let i = String.index s sep in
+      let name = String.sub s 0 i in
+      let version = String.sub s (i+1) (String.length s - i - 1) in
+      Some (name, version)
+    with _ ->
+      None
+
+  let split s ~on:sep =
+    let rec aux acc r =
+      match cut_at r sep with
+      | None       -> List.rev (r :: acc)
+      | Some (h,t) -> aux (strip h :: acc) t in
+    aux [] s
+
+end
+
 module File = struct
 
   let read file =
@@ -73,8 +111,15 @@ module Shell = struct
 end
 
 module Git = struct
-  let revision = Shell.read_command "git rev-parse HEAD"
-  let origin = Shell.read_command "git config --get remote.origin.url"
+
+  let revision =
+    Shell.read_command "git rev-parse HEAD"
+    |> String.strip
+
+  let origin =
+    Shell.read_command "git config --get remote.origin.url"
+    |> String.strip
+
 end
 
 module Opam = struct
@@ -82,14 +127,15 @@ module Opam = struct
   let info pkg fmt =
     Printf.ksprintf (fun str ->
         Shell.read_command "opam info %s %s" pkg str
+        |> String.strip
       ) fmt
 
   let list pkg =
     Shell.read_command
       "opam list -s --required-by %s --rec --depopts --installed"
       pkg
-    |> Stringext.split ~on:'\n'
-    |> List.map String.trim
+    |> String.split ~on:'\n'
+    |> List.map String.strip
     |> List.filter ((<>)"")
 
 end
@@ -103,7 +149,9 @@ module Package = struct
     archive: string;
   }
 
-  let name pkg = Opam.info pkg "-f name"
+  let tt = "{ name: string; version: string; hash: string; archive: string }"
+
+  let name pkg = Opam.info pkg "-f package"
   let version pkg = Opam.info pkg "-f version"
   let hash pkg = Opam.info pkg "-f upstream-checksum"
   let archive pkg = Opam.info pkg "-f upstream-url"
@@ -128,6 +176,14 @@ module Package = struct
     let pkgs = Mirage.packages t in
     List.map create pkgs
 
+  let pp_name fmt t =
+    let s = Bytes.copy t.name in
+    String.iteri (fun i -> function
+        | '-' -> Bytes.set s i '_'
+        | _   -> ()
+      ) s;
+    Format.pp_print_string fmt s
+
 end
 
 let () =
@@ -140,12 +196,13 @@ let () =
   let pkgs = Package.of_config file in
   let buf = Buffer.create 1024 in
   let fmt = Format.formatter_of_buffer buf in
+  Format.fprintf fmt "type t = %s\n\n" Package.tt;
   Format.fprintf fmt "let current = %a\n\n" Package.pp current;
   List.iter (fun pkg ->
-      Format.fprintf fmt "let %s = %a\n\n" pkg.Package.name Package.pp pkg
+      Format.fprintf fmt "let %a = %a\n\n" Package.pp_name pkg Package.pp pkg
     ) pkgs;
-  Format.fprintf fmt "let t = [\n\
+  Format.fprintf fmt "let all = [\n\
                      \  current;\n";
-  List.iter (fun pkg -> Format.fprintf fmt "  %s;\n" pkg.Package.name) pkgs;
-  Format.fprintf fmt "]\n";
-  File.write ~file:"opam_manigest.ml" (Buffer.contents buf)
+  List.iter (fun pkg -> Format.fprintf fmt "  %a;\n" Package.pp_name pkg) pkgs;
+  Format.fprintf fmt "]";
+  File.write ~file:"opam_manifest.ml" (Buffer.contents buf)
