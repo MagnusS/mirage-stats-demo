@@ -14,18 +14,18 @@ module Main (C:CONSOLE) (S:Cohttp_lwt.Server) (Clock : V1.CLOCK)= struct
 
     (* get start time from xen *)
     let start_time =
-    OS.Xs.make () >>= fun client ->
-    OS.Xs.(immediate client (fun x -> read x "vm")) >>= fun vm ->
-    OS.Xs.(immediate client (fun x -> read x (vm^"/start_time"))) >|= fun start_time ->
-    (* TODO HACK strtod not implemented in minios, so can't use float_of_string without segfault *)
-    let a = Str.split (Str.regexp "[.]+") start_time in
-    let v = int_of_string (List.hd a) in 
-    let d_str = (List.hd (List.tl a)) in
-    Printf.printf "%s %s (%s)\n" (List.hd a) d_str start_time;
-    let d = int_of_string d_str in
-    assert ((String.length d_str) == 2); 
-    (float_of_int v) +. ((float_of_int d) /. 100.0)
-    (* end of HACK *)
+      OS.Xs.make () >>= fun client ->
+      OS.Xs.(immediate client (fun x -> read x "vm")) >>= fun vm ->
+      OS.Xs.(immediate client (fun x -> read x (vm^"/start_time"))) >|= fun start_time ->
+      (* TODO HACK strtod not implemented in minios, so can't use float_of_string without segfault *)
+      let a = Str.split (Str.regexp "[.]+") start_time in
+      let v = int_of_string (List.hd a) in 
+      let d_str = (List.hd (List.tl a)) in
+      Printf.printf "%s %s (%s)\n" (List.hd a) d_str start_time;
+      let d = int_of_string d_str in
+      assert ((String.length d_str) == 2); 
+      (float_of_int v) +. ((float_of_int d) /. 100.0)
+      (* end of HACK *)
     in
 
     (* Split a URI into a list of path segments *)
@@ -43,12 +43,12 @@ module Main (C:CONSOLE) (S:Cohttp_lwt.Server) (Clock : V1.CLOCK)= struct
     let rec dispatcher = function
       | [] | [""] -> dispatcher ["index.html"] 
       | segments ->
-          let on_time = Clock.time ()  in
-          start_time >>= fun st ->
-          let body = (Printf.sprintf "<html>\n<body>\n<h1>Hello World from Jitsu!</h1><br />Unikernel booted in %f seconds, %f seconds ago\n</body>\n</html>" 
-                    ((!finish_boot_ts) -. st) 
-                    (on_time -. st)) in
-          S.respond_string ~status:`OK ~body ()
+        let on_time = Clock.time ()  in
+        start_time >>= fun st ->
+        let body = (Printf.sprintf "<html>\n<body>\n<h1>Hello World from Jitsu!</h1><br />Unikernel booted in %f seconds, %f seconds ago\n</body>\n</html>" 
+                      ((!finish_boot_ts) -. st) 
+                      (on_time -. st)) in
+        S.respond_string ~status:`OK ~body ()
     in
 
     (* HTTP callback *)
