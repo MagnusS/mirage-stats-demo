@@ -10,7 +10,6 @@ module Index = struct
     "<meta charset=\"utf-8\">\n\
      <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n\
      <title>Index</title>\n\
-     <link rel=\"stylesheet\" href=\"css/normalize.css\">
      <link rel=\"stylesheet\" href=\"css/foundation.css\">\n\
      <script src=\"js/vendor/modernizr.js\"></script>"
 
@@ -23,9 +22,13 @@ module Index = struct
 
   let time ~boot ~ago =
     Printf.sprintf
-      "<span class=\"label\">\n\
-       Unikernel booted in %f seconds, %f seconds ago\n\
-       </span>" boot ago
+      "<div class=\"row\">\n\
+      \  <div class=\"large-12 columns\">\n\
+      \     <div class=\"panel\">\n\
+      \       Unikernel booted in %f seconds, %f seconds ago\n\
+      \    </div>\n\
+      \  </div>\n\
+       </div>" boot ago
 
   let manifest () =
     let open Opam_manifest in
@@ -65,7 +68,8 @@ module Index = struct
 
   let create ~boot ~ago =
     Printf.sprintf
-      "<html>\n\
+      "<!doctype html>\n\
+       <html class=\"no-js\ lang=\"en\">\n\
        <head>\n\
        %s\n\
        </head>\n\
