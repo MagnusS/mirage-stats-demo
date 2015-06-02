@@ -175,7 +175,7 @@ module Package = struct
     { name; version; hash; archive } 
 
   let current () =
-    { name = "current"; (* FIXME: expose the unikernel name in the Mirage API *)
+    { name = "unikernel"; (* FIXME: expose the unikernel name in the Mirage API *)
       version = "git";  (* FIXME: support non-git repo? *)
       hash = Git.revision;
       archive = Git.origin;
@@ -194,6 +194,15 @@ module Package = struct
       ) s;
     Format.pp_print_string fmt s
 
+  module Set = struct
+    include Set.Make(struct
+        type s = t
+        type t = s
+        let compare x y = Pervasives.compare x.name y.name
+      end)
+    let of_list t = List.fold_left (fun t h -> add h t) empty t
+  end
+
 end
 
 let () =
@@ -203,12 +212,20 @@ let () =
     else Shell.error "usage: %s [config.ml]" Sys.argv.(0)
   in
   let current = Package.current () in
+  let root_pkgs = Package.of_config file in
   let pkgs = 
-    Package.of_config file
-    |> List.map (fun pkg -> pkg.Package.name)
+    root_pkgs
+    |> List.map (fun pkg -> pkg.Package.name) 
     |> String.concat ","
     |> Opam.list
-    |> List.map Package.create
+    |> List.fold_left (fun acc name ->
+        if Package.Set.exists (fun pkg -> pkg.Package.name = name) acc then
+          acc
+        else
+          let pkg = Package.create name in
+          Package.Set.add pkg acc
+      ) (Package.Set.of_list root_pkgs)
+    |> Package.Set.elements
   in
   let buf = Buffer.create 1024 in
   let fmt = Format.formatter_of_buffer buf in
