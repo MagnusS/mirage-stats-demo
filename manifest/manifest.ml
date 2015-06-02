@@ -141,7 +141,9 @@ module Opam = struct
     Shell.read_command
       "opam list -s --required-by %s --rec --depopts --installed"
       pkg
-    |> String.split ~on:' '
+    |> String.split ~on:'\n'
+    |> List.map (String.split ~on:' ')
+    |> List.flatten
     |> List.map String.strip
     |> List.filter ((<>)"")
 
@@ -172,7 +174,7 @@ module Package = struct
     let version = version pkg in
     let hash = hash pkg in
     let archive = archive pkg in
-    { name; version; hash; archive } 
+    { name; version; hash; archive }
 
   let current () =
     { name = "unikernel"; (* FIXME: expose the unikernel name in the Mirage API *)
@@ -213,9 +215,9 @@ let () =
   in
   let current = Package.current () in
   let root_pkgs = Package.of_config file in
-  let pkgs = 
+  let pkgs =
     root_pkgs
-    |> List.map (fun pkg -> pkg.Package.name) 
+    |> List.map (fun pkg -> pkg.Package.name)
     |> String.concat ","
     |> Opam.list
     |> List.fold_left (fun acc name ->
