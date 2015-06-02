@@ -10,7 +10,7 @@ let ip name default =
   get name ~default:(fn default) fn
 
 let main =
-  foreign "Dispatch.Main" (console @-> http @-> clock @-> job)
+  foreign "Dispatch.Main" (console @-> kv_ro @-> http @-> clock @-> job)
 
 let ipv4_config =
   let address  = ip "IP" "10.0.0.10" in
@@ -23,12 +23,12 @@ let stack console = direct_stackv4_with_static_ipv4 console tap0 ipv4_config
 let server =
   conduit_direct (stack default_console)
 
-let http_srv =
-  http_server server
+let http_srv = http_server server
+let data = crunch "static"
 
 let () =
   add_to_ocamlfind_libraries ["re.str";"str"];
 
   register "www" [
-    main $ default_console $ http_srv $ default_clock
+    main $ default_console $ data $ http_srv $ default_clock
   ]
