@@ -1,5 +1,7 @@
 MANIFEST=./manifest/manifest.native
 
+depends:: opam_manifest.ml
+
 opam_manifest.ml: .git/HEAD
 	${MANIFEST}
 
