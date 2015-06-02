@@ -33,16 +33,16 @@ module Index = struct
   let manifest () =
     let open Opam_manifest in
     let buf = Buffer.create 1024 in
-    pb buf "<div class=\"large-6 columns\">\n\
-            <h3>Build Manifest (%d packages)</h3>\n\
+    pb buf "<div class=\"large-4 columns\">\n\
+            <h3>Build Manifest<br/><small>%d packages</small></h3>\n\
             <table>\n\
             <thead><tr><th>Name</th><th>Version</th></tr></thead>"
       (List.length Opam_manifest.all);
     List.iter (fun pkg ->
         match pkg.archive with
-        | "" -> pb buf "<tr><td>%s</td><td></td>%s</tr>\n" pkg.name pkg.version
+        | "" -> pb buf "<tr><td>%s</td><td>%s</td></tr>\n" pkg.name pkg.version
         | a  -> pb buf "<tr><td>%s</td><td><a href=%S>%s</a></td></tr>\n"
-                  a pkg.name pkg.version
+                  pkg.name a pkg.version
       ) Opam_manifest.all;
     pb buf "</table>\n\
             </div>";
@@ -54,7 +54,7 @@ module Index = struct
     let m f = Printf.sprintf "%.0fm" (f /. 1_000_000.) in
     let t = Gc.stat () in
     Printf.sprintf
-      "<div class=\"large-6 columns\">\n\
+      "<div class=\"large-4 columns\">\n\
        <h3>Live GC Stats</h3>
        <table>\n\
        <tr><td>Allocated Bytes</td><td>%s</td></tr>\n\
@@ -77,7 +77,7 @@ module Index = struct
        <div class=\"row\">
        <h1>Hello World from Jitsu!</h1>\
        </div>
-       <div class=\"row internals\">\n\
+       <div class=\"row\">\n\
        %s\n\
        %s\n\
        %s\n\
@@ -121,18 +121,17 @@ struct
     (float_of_int v) +. ((float_of_int d) /. 100.0)
     (* end of HACK *)
 
-  let read_fs kv name =
-    KV.size fs name >>= function
-    | `Error (KV.Unknown_key _) ->
-      Lwt.fail (Failure ("read " ^ name))
+  let read_static kv name =
+    KV.size kv name >>= function
+    | `Error (KV.Unknown_key _) -> Lwt.return_none
     | `Ok size ->
       KV.read kv name 0 (Int64.to_int size) >>= function
-      | `Error (KV.Unknown_key _) -> Lwt.fail (Failure ("read " ^ name))
-      | `Ok bufs -> Lwt.return (Cstruct.copyv bufs)
+      | `Error (KV.Unknown_key _) -> Lwt.return_none
+      | `Ok bufs -> Lwt.return (Some ((Cstruct.copyv bufs)))
 
   (* dispatch non-file URLs *)
   let rec dispatcher kv = function
-    | [] -> dispatcher ["index.html"]
+    | [] -> dispatcher kv ["index.html"]
     | ["index.html"] ->
       let on_time = Clock.time ()  in
       start_time () >>= fun st ->
@@ -140,15 +139,23 @@ struct
       let ago  = on_time -. st in
       let body = Index.create ~boot ~ago in
       S.respond_string ~status:`OK ~body ()
-    | path -> read_static kv path
+    | path ->
+      let path = String.concat "/" path in
+      let mimetype = Magic_mime.lookup path in
+      let headers = Cohttp.Header.of_list [
+          "contents-type", mimetype
+        ] in
+      read_static kv path >>= function
+      | None   -> S.respond_not_found ()
+      | Some s -> S.respond_string ~headers ~status:`OK ~body:s ()
 
-  let start c http clock =
+  let start c kv http clock =
     C.log_s c "Starting ....\n" >>= fun () ->
 
     (* HTTP callback *)
     let callback conn_id request body =
       let uri = S.Request.uri request in
-      dispatcher (split_path uri)
+      dispatcher kv (split_path uri)
     in
     let conn_closed (_,conn_id) =
       let cid = Cohttp.Connection.to_string conn_id in
