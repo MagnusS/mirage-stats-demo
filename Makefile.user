@@ -1,4 +1,5 @@
 MANIFEST=./manifest/manifest.native
+SYNTAX += -tag-line "<opam_manifest.*>: -syntax(camlp4o)"
 
 depend:: opam_manifest.ml
 
