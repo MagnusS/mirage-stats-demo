@@ -2,6 +2,9 @@ MANIFEST=./manifest/manifest.native
 
 depend:: opam_manifest.ml
 
+clean::
+	rm -f opam_manifest.ml
+
 opam_manifest.ml: ${MANIFEST} .git/HEAD
 	${MANIFEST}
 
