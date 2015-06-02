@@ -141,7 +141,7 @@ module Opam = struct
     Shell.read_command
       "opam list -s --required-by %s --rec --depopts --installed"
       pkg
-    |> String.split ~on:'\n'
+    |> String.split ~on:' '
     |> List.map String.strip
     |> List.filter ((<>)"")
 
@@ -172,9 +172,7 @@ module Package = struct
     let version = version pkg in
     let hash = hash pkg in
     let archive = archive pkg in
-    let t = { name; version; hash; archive } in
-    Format.printf "Package.create %s: %a\n" pkg pp t;
-    t
+    { name; version; hash; archive } 
 
   let current () =
     { name = "current"; (* FIXME: expose the unikernel name in the Mirage API *)
@@ -205,7 +203,13 @@ let () =
     else Shell.error "usage: %s [config.ml]" Sys.argv.(0)
   in
   let current = Package.current () in
-  let pkgs = Package.of_config file in
+  let pkgs = 
+    Package.of_config file
+    |> List.map (fun pkg -> pkg.Package.name)
+    |> String.concat ","
+    |> Opam.list
+    |> List.map Package.create
+  in
   let buf = Buffer.create 1024 in
   let fmt = Format.formatter_of_buffer buf in
   Format.fprintf fmt "type t = %s\n\n" Package.tt;
