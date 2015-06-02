@@ -1,8 +1,8 @@
 MANIFEST=./manifest/manifest.native
 
-depends:: opam_manifest.ml
+depend:: opam_manifest.ml
 
-opam_manifest.ml: .git/HEAD
+opam_manifest.ml: ${MANIFEST} .git/HEAD
 	${MANIFEST}
 
 ${MANIFEST}: ./manifest/manifest.ml
