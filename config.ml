@@ -27,7 +27,8 @@ let http_srv = http_server server
 let data = crunch "static"
 
 let () =
-  add_to_ocamlfind_libraries ["re.str";"str"];
+  add_to_opam_packages ["magic-mime"];
+  add_to_ocamlfind_libraries ["re.str";"str";"magic-mime"];
 
   register "www" [
     main $ default_console $ data $ http_srv $ default_clock
