@@ -189,12 +189,17 @@ module Package = struct
     List.map create pkgs
 
   let pp_name fmt t =
-    let s = Bytes.copy t.name in
-    String.iteri (fun i -> function
-        | '-' -> Bytes.set s i '_'
-        | _   -> ()
-      ) s;
-    Format.pp_print_string fmt s
+    let name =
+      if t.name = "lwt" then "lwt_"
+      else
+        let s = Bytes.copy t.name in
+        String.iteri (fun i -> function
+            | '-' -> Bytes.set s i '_'
+            | _   -> ()
+          ) s;
+        s
+    in
+    Format.pp_print_string fmt name
 
   module Set = struct
     include Set.Make(struct
