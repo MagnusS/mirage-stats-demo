@@ -27,15 +27,16 @@ let manifest () =
 
 let gc () =
   let open Gc in
-  let k f = Printf.sprintf "%dk" (f / 1_000) in
-  let m f = Printf.sprintf "%.0fm" (f /. 1_000_000.) in
+  let k f = Printf.sprintf "%dKB" (f / 1_000) in
+  let m f = Printf.sprintf "%.0fMB" (f /. 1_000_000.) in
   let t = Gc.stat () in
   Printf.sprintf
     "<div class=\"gc\">\n\
+     <h3>GC</h3>\n\
      <ul>\n\
-     <li>%s</li>\n\
-     <li>%s</li>\n\
-     <li>%s</li>\n\
+     <li>Allocated bytes: %s</li>\n\
+     <li>Head words: %s</li>\n\
+     <li>Live words: %s</li>\n\
      </ul>\n\
      </div>"
     (m (Gc.allocated_bytes ()))
@@ -49,8 +50,9 @@ let body ~boot ~ago =
      <link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\n\
      </head>\n\
      <body>\n\
+     <div class=\"main\">\n\
      <h1>Hello World from Jitsu!</h1>\
-     <hr />\
+     </div>\n\
      <div class=\"internals\">\n\
      %s\n\
      %s\n\
@@ -61,10 +63,18 @@ let body ~boot ~ago =
     (time ~boot ~ago) (gc ()) (manifest ())
 
 let style_css =
-  ".internals {\n\
-  \  background-color: black;\n\
-  \  color: white;\n\
-   \ width: 100%;\n\
+  "body {\n\
+  \  background-color: grey;\n\
+  \  width: 100%;\n\
+   };\n\
+   \n\
+   .main {\n\
+  \  background-color: white;\n\
+  \  width: 100%;\n\
+   };\n\
+   \n\
+   .internals {\n\
+  \  width: 100%;\n\
    }"
 
 (* Split a URI into a list of path segments *)
