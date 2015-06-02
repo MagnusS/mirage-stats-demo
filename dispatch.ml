@@ -45,6 +45,9 @@ let gc () =
 let body ~boot ~ago =
   Printf.sprintf
     "<html>\n\
+     <head>\n\
+     <link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\n\
+     </head>\n\
      <body>\n\
      <h1>Hello World from Jitsu!</h1>\
      <hr />\
@@ -56,6 +59,13 @@ let body ~boot ~ago =
      </body>\n\
      </html>"
     (time ~boot ~ago) (gc ()) (manifest ())
+
+let style_css =
+  ".internals {\n\
+  \  background-color: black;\n\
+  \  color: white;\n\
+   \ width: 100%;\n\
+   }"
 
 (* Split a URI into a list of path segments *)
 let split_path uri =
@@ -91,6 +101,11 @@ module Main (C:CONSOLE) (S:Cohttp_lwt.Server) (Clock : V1.CLOCK)= struct
   (* dispatch non-file URLs *)
   let rec dispatcher = function
     | [] -> dispatcher ["index.html"]
+    | ["style.css"] ->
+      let headers = Cohttp.Header.of_list [
+          "Content-type", "text/css"
+        ] in
+      S.respond_string ~headers ~status:`OK ~body:style_css ()
     | segments ->
       let on_time = Clock.time ()  in
       start_time () >>= fun st ->
