@@ -121,6 +121,12 @@ struct
     (float_of_int v) +. ((float_of_int d) /. 100.0)
     (* end of HACK *)
 
+  (* write key in xenstore to let jitsu know we are ready *)
+  let im_ready c =
+    let key = "data/status" and value = "ready" in
+    OS.Xs.make () >>= fun xs ->
+    OS.Xs.(immediate xs (fun h -> write h key value))
+
   let read_static kv name =
     KV.size kv name >>= function
     | `Error (KV.Unknown_key _) -> Lwt.return_none
@@ -151,6 +157,7 @@ struct
 
   let start c kv http clock =
     C.log_s c "Starting ....\n" >>= fun () ->
+    im_ready () >>= fun () ->
 
     (* HTTP callback *)
     let callback conn_id request body =
