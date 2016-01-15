@@ -5,13 +5,7 @@ experimental.
 
 ### Instructions
 
-You'll need the dev versions of some mirage libraries:
-
-```
-opam repo add mirage-dev https://github.com/mirage/mirage-dev.git
-```
-
-Then you can compile the app into a Xen image:
+To compile the app into a Xen image:
 
 ```
 mirage configure --xen
