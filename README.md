@@ -1,7 +1,9 @@
 # mirage-stats-demo
 
 Unikernel that displays stats on a web page. Currently very basic and
-experimental.
+experimental. 
+
+A live version is hosted with [Jitsu](http://github.com/mirage/jitsu.git) at [jitsu.v0.no](http://jitsu.v0.no).
 
 ### Instructions
 
